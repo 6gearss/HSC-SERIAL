@@ -82,7 +82,7 @@ A reusable PlatformIO library for ESP32-based devices on the HSC train layout. T
 
 Clone this repository and modify it directly:
 ```bash
-git clone https://github.com/YOUR_USERNAME/HSC-ESP32-Base.git my-device
+git clone https://github.com/6gearss/HSC-ESP32.git my-device
 cd my-device
 # Modify src/main.cpp and src/config.h for your needs
 pio run --target upload
