@@ -418,6 +418,11 @@ void HSC_Base::begin() {
   pinMode(2, OUTPUT);
   digitalWrite(2, LOW);
 
+  // Initialize SPIFFS
+  if (!SPIFFS.begin(true)) {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+  }
+
   // Initialize AP Mode Button
   pinMode(PIN_AP_BUTTON, INPUT_PULLUP);
 
@@ -658,6 +663,25 @@ void HSC_Base::setupWebServer() {
   // Serve embedded style.css
   server.on("/style.css", HTTP_GET, [this](AsyncWebServerRequest *request) {
     request->send_P(200, "text/css", style_css);
+  });
+
+  // Serve device.html from SPIFFS
+  server.on("/device", HTTP_GET, [this](AsyncWebServerRequest *request) {
+    if (SPIFFS.exists("/device.html")) {
+      request->send(SPIFFS, "/device.html", "text/html", false,
+                    [this](const String &var) { return processor(var); });
+    } else {
+      request->send(404, "text/plain", "Device page not found");
+    }
+  });
+
+  // Serve favicon.ico from SPIFFS
+  server.on("/favicon.ico", HTTP_GET, [this](AsyncWebServerRequest *request) {
+    if (SPIFFS.exists("/favicon.ico")) {
+      request->send(SPIFFS, "/favicon.ico", "image/x-icon");
+    } else {
+      request->send(404, "text/plain", "Favicon not found");
+    }
   });
 
   // API: Get Settings
