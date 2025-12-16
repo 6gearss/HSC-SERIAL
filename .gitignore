@@ -20,3 +20,10 @@ credentials.h
 
 # Keep the library
 !lib/HSC_Base/
+
+# Ignore OTA artifacts
+firmware_*.bin
+firmware_*.json
+
+
+

@@ -957,10 +957,78 @@ void HSC_Base::performOTA(const String &url) {
   String finalUrl = url;
   finalUrl.replace("%BOARD_TYPE%", boardTypeShort);
 
-  Serial.println("Starting OTA Update...");
+  // Check metadata for SPIFFS update
+  String checkUrl = finalUrl;
+  int dotIndex = checkUrl.lastIndexOf('.');
+  if (dotIndex != -1) {
+    checkUrl = checkUrl.substring(0, dotIndex) + ".json";
+  } else {
+    checkUrl += ".json";
+  }
+
+  bool updateSpiffs = false;
+  WiFiClient client;
+  HTTPClient http;
+
+  // Reuse client logic for http/https in check
+  if (checkUrl.startsWith("https")) {
+    WiFiClientSecure secureClient;
+    secureClient.setInsecure();
+    http.begin(secureClient, checkUrl);
+  } else {
+    http.begin(client, checkUrl);
+  }
+
+  int httpCode = http.GET();
+  if (httpCode == HTTP_CODE_OK) {
+    String payload = http.getString();
+    StaticJsonDocument<1024> doc;
+    DeserializationError error = deserializeJson(doc, payload);
+    if (!error) {
+      updateSpiffs = doc["update_spiffs"] | false;
+    }
+  }
+  http.end();
+
+  if (updateSpiffs) {
+    Serial.println("Filesystem update requested...");
+    String spiffsUrl = finalUrl;
+    if (dotIndex != -1) {
+      spiffsUrl = spiffsUrl.substring(0, dotIndex) + ".spiffs.bin";
+    } else {
+      spiffsUrl += ".spiffs.bin";
+    }
+    Serial.println("SPIFFS URL: " + spiffsUrl);
+
+    // Unmount SPIFFS to ensure safe update
+    SPIFFS.end();
+
+    httpUpdate.rebootOnUpdate(false); // Don't reboot after SPIFFS
+
+    t_httpUpdate_return ret;
+    if (spiffsUrl.startsWith("https")) {
+      WiFiClientSecure secureClient;
+      secureClient.setInsecure();
+      ret = httpUpdate.updateSpiffs(secureClient, spiffsUrl);
+    } else {
+      ret = httpUpdate.updateSpiffs(client, spiffsUrl);
+    }
+
+    if (ret == HTTP_UPDATE_OK) {
+      Serial.println("SPIFFS Update OK");
+    } else {
+      Serial.printf("SPIFFS Update Failed (%d): %s\n",
+                    httpUpdate.getLastError(),
+                    httpUpdate.getLastErrorString().c_str());
+      // Try to recover SPIFFS mount if update failed
+      SPIFFS.begin(true);
+    }
+  }
+
+  Serial.println("Starting Firmware Update...");
   Serial.println("URL: " + finalUrl);
 
-  WiFiClient client;
+  httpUpdate.rebootOnUpdate(true); // Reboot after firmware
 
   if (finalUrl.startsWith("https")) {
     WiFiClientSecure secureClient;
