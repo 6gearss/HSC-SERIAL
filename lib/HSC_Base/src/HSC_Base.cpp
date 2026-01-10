@@ -630,12 +630,12 @@ void HSC_Base::reconnectMqtt() {
     // 3. Optional Boot Announcement (Non-retained)
     // We send this every time we reconnect, which acts as a "device allows" or
     // "hello" message
-    StaticJsonDocument<128> bootDoc;
-    bootDoc["hostname"] = deviceId;
-    bootDoc["event"] = "boot"; // or 'reconnect' if we wanted to be specific
-    char bootBuf[128];
-    serializeJson(bootDoc, bootBuf);
-    mqttClient.publish("HSC/devices/announce", bootBuf, false);
+    // StaticJsonDocument<128> bootDoc;
+    // bootDoc["hostname"] = deviceId;
+    // bootDoc["event"] = "boot"; // or 'reconnect' if we wanted to be specific
+    // char bootBuf[128];
+    // serializeJson(bootDoc, bootBuf);
+    // mqttClient.publish("HSC/devices/announce", bootBuf, false);
 
     // 4. Subscribe to Configuration
     String configTopic = "HSC/devices/" + deviceId + "/config";
