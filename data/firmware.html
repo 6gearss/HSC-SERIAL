@@ -215,7 +215,11 @@
             updateInfo.style.display = 'none';
             checkBtn.disabled = true;
 
-            fetch('/api/firmware/check')
+            const urlParams = new URLSearchParams(window.location.search);
+            const downgrade = urlParams.get('downgrade');
+            const fetchUrl = downgrade ? `/api/firmware/check?downgrade=${downgrade}` : '/api/firmware/check';
+
+            fetch(fetchUrl)
                 .then(r => r.json())
                 .then(data => {
                     checkBtn.disabled = false;

@@ -18,6 +18,6 @@ static const char *UPDATE_URL =
 // You can also override other defaults from lib/HSC_Base/src/config.h here
 // For example:
 #undef FW_VERSION
-static const char FW_VERSION[] = "0.2.0";
+static const char FW_VERSION[] = "0.3.0";
 
 #endif

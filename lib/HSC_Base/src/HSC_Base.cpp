@@ -919,7 +919,14 @@ void HSC_Base::setupWebServer() {
             String remoteVersion = remoteDoc["version"] | "unknown";
             String notes = remoteDoc["notes"] | "";
 
-            bool updateAvailable = remoteVersion != String(currentVersion);
+            bool allowDowngrade = false;
+            if (request->hasParam("downgrade")) {
+              String val = request->getParam("downgrade")->value();
+              allowDowngrade = (val == "true" || val == "1");
+            }
+
+            bool updateAvailable =
+                (remoteVersion != String(currentVersion)) || allowDowngrade;
 
             // Construct response
             StaticJsonDocument<1024> resDoc;

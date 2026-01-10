@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 // --- General Configuration ---
-static const char FW_VERSION[] = "0.2.0"; // Base Template
+static const char FW_VERSION[] = "0.3.0"; // Base Template
 
 // --- Board Type ---
 // Override these in your project's src/config.h
