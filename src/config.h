@@ -7,9 +7,9 @@
 #undef BOARD_TYPE_SHORT
 
 static const char BOARD_TYPE_DESC[] =
-    "HSC NEW Device"; // Full description for web UI
+    "HSC Serial Device"; // Full description for web UI
 static const char BOARD_TYPE_SHORT[] =
-    "NEW"; // Short name for MQTT (e.g., "BASE-1", "YARD-2", "SIGNAL-3")
+    "SERIAL"; // Short name for MQTT (e.g., "BASE-1", "YARD-2", "SIGNAL-3")
 
 // --- OTA Update ---
 static const char *UPDATE_URL =

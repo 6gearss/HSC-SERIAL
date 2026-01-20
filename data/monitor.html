@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serial Monitor</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #d4d4d4;
+            --accent-color: #007acc;
+            --border-color: #333;
+        }
+
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background-color: #252526;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #3e3e42;
+            color: white;
+            border: 1px solid #4e4e52;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        button:hover {
+            background-color: #4e4e52;
+        }
+
+        button.active {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        #terminal {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .data-line {
+            margin: 0;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <a href="/device" style="color: white; text-decoration: none; font-size: 1.2rem;">&larr;</a>
+            <h1>Serial Monitor</h1>
+        </div>
+        <div class="controls">
+            <button id="autoscrollBtn" class="active">Autoscroll: ON</button>
+            <button id="clearBtn">Clear</button>
+        </div>
+    </header>
+    <div id="terminal"></div>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const autoscrollBtn = document.getElementById('autoscrollBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        let autoscroll = true;
+        let ws;
+        let buffer = '';
+
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+            ws.onopen = () => {
+                appendLog('Connected to WebSocket');
+            };
+
+            ws.onmessage = (event) => {
+                // Debug log to console
+                console.log('RX:', JSON.stringify(event.data));
+                buffer += event.data;
+                processBuffer();
+            };
+
+            ws.onclose = () => {
+                appendLog('Connection lost. Reconnecting in 2s...');
+                setTimeout(connect, 2000);
+            };
+
+            ws.onerror = (err) => {
+                console.error('WS Error:', err);
+                // appendLog('WebSocket Error'); // Optional: don't clutter UI unless needed
+            };
+        }
+
+        function processBuffer() {
+            // Loop while we find any delimiter
+            while (true) {
+                // Determine the next delimiter: \r\n, \n, or \r
+                // We want to verify priority: \r\n should be matched first if possible.
+                // Regex matches left-to-right.
+                const match = buffer.match(/(\r\n|\n|\r)/);
+
+                if (!match) break; // No delimiter found, wait for more data
+
+                const index = match.index;
+                const delimiterLength = match[0].length;
+
+                // Extract the line up to the delimiter
+                const line = buffer.substring(0, index).trim(); // Remove whitespace/extra CRs if any
+
+                if (line.length > 0) {
+                    appendLog(line);
+                }
+
+                // Remove the line and the delimiter from the buffer
+                buffer = buffer.substring(index + delimiterLength);
+            }
+        }
+
+        function appendLog(data) {
+            const line = document.createElement('div');
+            line.className = 'data-line';
+
+            const spanData = document.createElement('span');
+            spanData.textContent = data;
+
+            line.appendChild(spanData);
+
+            terminal.appendChild(line);
+
+            if (autoscroll) {
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+        }
+
+        autoscrollBtn.addEventListener('click', () => {
+            autoscroll = !autoscroll;
+            autoscrollBtn.textContent = `Autoscroll: ${autoscroll ? 'ON' : 'OFF'}`;
+            autoscrollBtn.classList.toggle('active');
+        });
+
+        clearBtn.addEventListener('click', () => {
+            terminal.innerHTML = '';
+        });
+
+        connect();
+    </script>
+</body>
+
+</html>
